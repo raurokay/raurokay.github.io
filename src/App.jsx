@@ -139,7 +139,7 @@ const App = () => {
 
   const addManualMessage = async () => {
     const { value: messageId } = await Swal.fire({
-      title: "Import Message ID",
+      title: "Import Message By ID",
       html: `
        <label class="swal-form-label" for="message-id">Message ID</label>
        <input class="swal2-input" id="message-id">`,
@@ -483,8 +483,8 @@ const App = () => {
                         type="text"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        placeholder="Search messages"
-                        className="w-full bg-(--bg-input) text-xs h-8 rounded-full outline-none focus:ring-1 ring-[#5865f2]"
+                        placeholder="Search messages..."
+                        className="w-full bg-(--bg-input) text-xs h-8 rounded-full outline-none pl-9 pr-8 focus:ring-1 ring-[#5865f2]"
                       />
                       <button
                         onClick={() => {
@@ -507,7 +507,7 @@ const App = () => {
                   disabled={isProcessing}
                   className="flex h-8 items-center gap-1.5 px-3 rounded bg-[#248046] hover:bg-[#1a6334] text-[11px] text-white font-semibold transition-colors disabled:opacity-50">
                   <Icon name="plus" size={14} />{" "}
-                  <span className="hidden sm:inline">Add Message</span>
+                  <span className="hidden sm:inline">Import Message</span>
                 </button>
                 <button
                   onClick={() => {
