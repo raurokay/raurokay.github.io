@@ -463,6 +463,7 @@ const App = () => {
               <h2 className="font-bold text-sm text-(--text-header) truncate max-w-[100px] sm:max-w-none leading-none">
                 {activeProfile ? activeProfile.name : "Webhooks"}
               </h2>
+
               {!isTiny && activeProfile && (
                 <div
                   className={`relative flex items-center transition-all duration-300 ${
@@ -483,7 +484,7 @@ const App = () => {
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                         placeholder="Search messages"
-                        className="w-full bg-(--bg-input) text-xs h-8 pl-9 pr-8 rounded-full outline-none focus:ring-1 ring-[#5865f2]"
+                        className="w-full bg-(--bg-input) text-xs h-8 rounded-full outline-none focus:ring-1 ring-[#5865f2]"
                       />
                       <button
                         onClick={() => {
@@ -498,6 +499,7 @@ const App = () => {
                 </div>
               )}
             </div>
+
             {activeProfile && (
               <div className="flex gap-2">
                 <button
@@ -505,9 +507,7 @@ const App = () => {
                   disabled={isProcessing}
                   className="flex h-8 items-center gap-1.5 px-3 rounded bg-[#248046] hover:bg-[#1a6334] text-[11px] text-white font-semibold transition-colors disabled:opacity-50">
                   <Icon name="plus" size={14} />{" "}
-                  <span className="hidden sm:inline">
-                    Add Message To History
-                  </span>
+                  <span className="hidden sm:inline">Add Message</span>
                 </button>
                 <button
                   onClick={() => {
@@ -536,11 +536,35 @@ const App = () => {
                   }}
                   className="flex h-8 items-center gap-1.5 px-3 rounded bg-[#da373c] hover:bg-[#a12828] text-[11px] text-white font-semibold transition-colors">
                   <Icon name="trash-2" size={14} />{" "}
-                  <span className="hidden md:inline">Delete All Messages</span>
+                  <span className="hidden sm:inline">Delete All Messages</span>
                 </button>
               </div>
             )}
           </div>
+
+          {isTiny && activeProfile && (
+            <div className="w-full pb-2 px-1">
+              <div className="flex items-center w-full relative">
+                <div className="absolute left-3 text-gray-400">
+                  <Icon name="search" size={14} />
+                </div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Search messages..."
+                  className="w-full bg-(--bg-input) text-xs h-8 pl-9 pr-8 rounded-lg outline-none focus:ring-1 ring-[#5865f2]"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2 text-gray-500 hover:text-white">
+                    <Icon name="x" size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </header>
         <section className="flex-1 overflow-y-auto">
           {!activeProfile ? (
@@ -583,12 +607,12 @@ const App = () => {
                                 {m.payload.embeds[0].title}
                               </div>
                             )}
-                            <div className="text-sm mt-1 whitespace-pre-wrap leading-relaxed">
+                            <div className="text-sm mt-1 whitespace-pre-wrap leading-relaxed wrap-break-word hyphens-auto">
                               {m.payload.embeds[0].description}
                             </div>
                           </div>
                         ) : (
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed wrap-break-word hyphens-auto">
                             {m.payload.content || ""}
                           </p>
                         )}
@@ -661,7 +685,7 @@ const App = () => {
                       (e.preventDefault(), sendMessage())
                     }
                     placeholder={`Message ${activeProfile.name}`}
-                    className="bg-transparent w-full outline-none text-sm resize-none h-10 sm:h-12"
+                    className="bg-transparent w-full outline-none text-sm h-10 sm:h-12"
                   />
                 ) : (
                   <div className="flex flex-col gap-3">
@@ -679,7 +703,7 @@ const App = () => {
                       onChange={e =>
                         setEmbed({ ...embed, description: e.target.value })
                       }
-                      className="bg-transparent text-sm outline-none h-20 resize-none"
+                      className="bg-transparent text-sm outline-none h-20"
                     />
                     <div className="flex items-center gap-3 pt-2 border-t border-(--border) overflow-x-auto">
                       <span className="text-[10px] text-[#949ba4] uppercase font-bold tracking-wide whitespace-nowrap">

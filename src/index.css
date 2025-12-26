@@ -46,7 +46,15 @@ body {
 
 .swal2-input,
 .swal2-textarea {
-  @apply bg-(--bg-main)! text-(--text-main)! border-(--border)! focus:border-(--blurple)! shadow-none! m-0! mt-2! mb-4! w-full! block! h-10! text-sm!;
+  @apply bg-(--bg-main)! text-(--text-main)! border-(--border)! focus:border-(--blurple)! shadow-none! m-0! mt-2! mb-4! w-full! block!;
+}
+
+.swal2-input {
+  @apply h-10! text-sm!;
+}
+
+.swal2-textarea {
+  @apply h-30! text-sm! p-2! resize!;
 }
 
 .swal2-actions {
