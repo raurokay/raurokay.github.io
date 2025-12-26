@@ -1,0 +1,81 @@
+@import "tailwindcss";
+@reference "tailwindcss";
+
+:root {
+  --bg-main: #313338;
+  --bg-sidebar: #1e1f22;
+  --bg-header: #2b2d31;
+  --text-main: #dbdee1;
+  --blurple: #5865f2;
+  --border: rgba(0, 0, 0, 0.2);
+  --text-muted: #949ba4;
+  --text-header: #ffffff;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-main: #ffffff;
+    --bg-sidebar: #f2f3f5;
+    --bg-header: #ffffff;
+    --text-main: #313338;
+    --text-muted: #5c5e66;
+    --text-header: #060607;
+    --border: rgba(0, 0, 0, 0.08);
+  }
+}
+
+button {
+  @apply cursor-pointer
+}
+
+body {
+  @apply bg-(--bg-main) text-(--text-main) font-sans h-screen overflow-hidden;
+}
+
+.swal2-popup {
+  @apply bg-(--bg-header) text-(--text-main) border border-(--border) rounded-lg p-6! w-[440px]! block! text-left!;
+}
+
+.swal2-title {
+  @apply text-(--text-header)! text-left! p-0! m-0! mb-4! text-xl! font-semibold! block!;
+}
+
+.swal2-html-container {
+  @apply text-left! m-0! p-0! block!;
+}
+
+.swal2-input,
+.swal2-textarea {
+  @apply bg-(--bg-main)! text-(--text-main)! border-(--border)! focus:border-(--blurple)! shadow-none! m-0! mt-2! mb-4! w-full! block! h-10! text-sm!;
+}
+
+.swal2-actions {
+  @apply justify-end! w-full! p-0! m-0! mt-2! flex! bg-transparent!;
+}
+
+.swal2-confirm {
+  @apply bg-(--blurple)! hover:bg-[#4752c4]! px-6! py-2! m-0! ml-2! order-2! text-sm! font-medium! transition-colors!;
+}
+
+.swal2-cancel {
+  @apply bg-transparent! hover:underline! text-(--text-main)! m-0! order-1! text-sm! font-medium!;
+}
+
+.swal-form-label {
+  @apply block text-[11px] font-bold uppercase text-(--text-muted) tracking-wider leading-none;
+}
+
+#swal2-input, #swal2-textarea {
+  @apply hidden!;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-sidebar);
+  border-radius: 10px;
+}
