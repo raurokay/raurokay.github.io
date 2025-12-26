@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import Swal from "sweetalert2";
-// Import the specific icons needed for the mapping
 import {
   X,
   Menu,
@@ -10,13 +9,11 @@ import {
   Edit3,
   Send,
   HelpCircle,
+  Plus,
 } from "lucide-react";
-import { PlusIcon } from "lucide-react";
-import { Plus } from "lucide-react";
 
 // --- Breakpoint Hook ---
 const useIsBelowBreakpoint = breakpoint => {
-  // Initialize state with the current value to avoid cascading renders
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia(`(max-width: ${breakpoint}px)`).matches;
@@ -33,9 +30,8 @@ const useIsBelowBreakpoint = breakpoint => {
   return isMobile;
 };
 
-// --- Icon Component (React Way) ---
+// --- Icon Component ---
 const Icon = ({ name, size = 16, className = "" }) => {
-  // Mapping string names to Lucide React components
   const iconMap = {
     x: X,
     menu: Menu,
@@ -69,6 +65,7 @@ const App = () => {
     description: "",
     color: "#5865f2",
   });
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
   const isTiny = useIsBelowBreakpoint(450);
@@ -101,6 +98,7 @@ const App = () => {
 
   const pullMessages = async () => {
     if (!activeProfile || activeProfile.messages.length === 0) return;
+    setIsProcessing(true);
     try {
       const results = await Promise.allSettled(
         activeProfile.messages.map(async m => {
@@ -134,8 +132,72 @@ const App = () => {
         updated[activeIdx] = { ...updated[activeIdx], messages: synced };
         return updated;
       });
-    } catch {
-      0;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const addManualMessage = async () => {
+    const { value: messageId } = await Swal.fire({
+      title: "Import Message ID",
+      html: `
+       <label class="swal-form-label" for="message-id">Message ID</label>
+       <input class="swal2-input" id="message-id">`,
+      showCancelButton: true,
+      confirmButtonText: "Add to History",
+      inputValidator: value => {
+        if (!value) return "You must provide a message ID";
+      },
+      preConfirm: () => {
+        const input = document.getElementById("message-id");
+        const value = input.value.trim();
+        if (!value) {
+          Swal.showValidationMessage("You must provide a message ID");
+          return false;
+        }
+        return value;
+      },
+    });
+
+    if (messageId) {
+      setIsProcessing(true);
+      try {
+        const res = await fetch(`${activeProfile.url}/messages/${messageId}`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+
+        setProfiles(prev => {
+          const updated = [...prev];
+          const currentProf = { ...updated[activeIdx] };
+
+          if (currentProf.messages.some(m => m.id === messageId)) {
+            Swal.fire(
+              "Already Tracked",
+              "This message is already in your history.",
+              "info"
+            );
+            return prev;
+          }
+
+          const newMsg = {
+            id: messageId,
+            payload: { content: data.content, embeds: data.embeds },
+            timestamp: new Date().toLocaleTimeString() + " (Imported)",
+          };
+
+          currentProf.messages = [...currentProf.messages, newMsg];
+          updated[activeIdx] = currentProf;
+          return updated;
+        });
+      } catch {
+        Swal.fire(
+          "Error",
+          "Could not find message. Ensure ID is correct for this Webhook.",
+          "error"
+        );
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
 
@@ -196,23 +258,29 @@ const App = () => {
     const isEmbed = !!(msg.payload.embeds && msg.payload.embeds.length > 0);
     const { value: formValues } = await Swal.fire({
       title: "Edit Message",
-      html: isEmbed
-        ? `
-                    <label class="swal-form-label">Title</label>
-                    <input id="edit-title" class="swal2-input" value="${
-                      msg.payload.embeds[0].title || ""
-                    }">
-                    <label class="swal-form-label">Description</label>
-                    <textarea id="edit-desc" class="swal2-textarea" rows="4">${
-                      msg.payload.embeds[0].description || ""
-                    }</textarea>
-                `
-        : `
-                    <label class="swal-form-label">Content</label>
-                    <textarea id="edit-content" class="swal2-textarea" rows="6">${
-                      msg.payload.content || ""
-                    }</textarea>
-                `,
+      html: `
+        <div class="flex flex-col text-left">
+          ${
+            isEmbed
+              ? `
+            <label class="swal-form-label" for="edit-title">Title</label>
+            <input id="edit-title" class="swal2-input" value="${
+              msg.payload.embeds[0].title || ""
+            }">
+            <label class="swal-form-label" for="edit-desc">Description</label>
+            <textarea id="edit-desc" class="swal2-textarea" rows="4">${
+              msg.payload.embeds[0].description || ""
+            }</textarea>
+          `
+              : `
+            <label class="swal-form-label" for="edit-content">Content</label>
+            <textarea id="edit-content" class="swal2-textarea" rows="6">${
+              msg.payload.content || ""
+            }</textarea>
+          `
+          }
+        </div>
+      `,
       showCancelButton: true,
       preConfirm: () =>
         isEmbed
@@ -253,38 +321,28 @@ const App = () => {
     const { value: f } = await Swal.fire({
       title: idx !== null ? "Edit Profile" : "New Webhook Profile",
       html: `
-                    <label class="swal-form-label required">Profile Name</label>
-                    <input id="p-name" class="swal2-input" value="${
-                      p.name
-                    }" required>
-                    <label class="swal-form-label">Bot Nickname</label>
-                    <input id="p-nick" class="swal2-input" value="${
-                      p.nickname || ""
-                    }">
-                    <label class="swal-form-label required">Webhook URL</label>
-                    <input id="p-url" class="swal2-input" value="${
-                      p.url
-                    }" required>
-                `,
+        <div class="flex flex-col text-left">
+          <label class="swal-form-label required for="p-name">Profile Name</label>
+          <input id="p-name" class="swal2-input" value="${p.name}">
+          <label class="swal-form-label" for="p-nick">Bot Nickname</label>
+          <input id="p-nick" class="swal2-input" value="${p.nickname || ""}">
+          <label class="swal-form-label" required for="p-url">Webhook URL</label>
+          <input id="p-url" class="swal2-input" value="${p.url}">
+        </div>
+      `,
       showCancelButton: true,
       preConfirm: () => {
         const name = document.getElementById("p-name").value;
         const url = document.getElementById("p-url").value;
         if (!name || !url)
-          return Swal.showValidationMessage(
-            "Profile name and URL are required"
-          );
+          return Swal.showValidationMessage("Required fields missing");
         try {
           const validatedUrl = new URL(url);
-          const isDiscord =
-            validatedUrl.hostname.includes("discord.com") ||
-            validatedUrl.hostname.includes("discordapp.com");
+          const isDiscord = validatedUrl.hostname.includes("discord");
           const isWebhookPath =
             validatedUrl.pathname.includes("/api/webhooks/");
           if (!isDiscord || !isWebhookPath)
-            return Swal.showValidationMessage(
-              "Please enter a valid Discord Webhook URL"
-            );
+            return Swal.showValidationMessage("Invalid Discord Webhook URL");
         } catch {
           return Swal.showValidationMessage("Invalid URL format");
         }
@@ -318,7 +376,7 @@ const App = () => {
         </div>
         <button
           onClick={() => profileForm()}
-          className="bg-[#248046] hover:bg-[#1a6334] text-white w-7 h-7 rounded-full flex items-center justify-center text-xl transition-all leading-none">
+          className="bg-[#248046] hover:bg-[#1a6334] text-white w-7 h-7 rounded-full flex items-center justify-center transition-all leading-none">
           <Icon name="plus" size={18} />
         </button>
       </div>
@@ -443,12 +501,22 @@ const App = () => {
             {activeProfile && (
               <div className="flex gap-2">
                 <button
+                  onClick={addManualMessage}
+                  disabled={isProcessing}
+                  className="flex h-8 items-center gap-1.5 px-3 rounded bg-[#248046] hover:bg-[#1a6334] text-[11px] text-white font-semibold transition-colors disabled:opacity-50">
+                  <Icon name="plus" size={14} />{" "}
+                  <span className="hidden sm:inline">
+                    Add Message To History
+                  </span>
+                </button>
+                <button
                   onClick={() => {
                     Swal.fire({
                       title: "Delete All Messages?",
                       showCancelButton: true,
                     }).then(r => {
                       if (r.isConfirmed) {
+                        setIsProcessing(true);
                         Promise.allSettled(
                           activeProfile.messages.map(m =>
                             fetch(`${activeProfile.url}/messages/${m.id}`, {
@@ -461,6 +529,7 @@ const App = () => {
                             up[activeIdx] = { ...up[activeIdx], messages: [] };
                             return up;
                           });
+                          setIsProcessing(false);
                         });
                       }
                     });
@@ -472,27 +541,6 @@ const App = () => {
               </div>
             )}
           </div>
-          {isTiny && activeProfile && (
-            <div className="flex items-center w-full h-10 pb-2 relative">
-              <div className="absolute left-2 text-gray-500 flex items-center">
-                <Icon name="search" size={16} />
-              </div>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search messages"
-                className="w-full bg-(--bg-input) text-xs h-8 pl-8 pr-8 rounded-md outline-none border border-(--border)"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2 text-gray-500 flex items-center">
-                  <Icon name="x" size={14} />
-                </button>
-              )}
-            </div>
-          )}
         </header>
         <section className="flex-1 overflow-y-auto">
           {!activeProfile ? (
@@ -502,7 +550,6 @@ const App = () => {
           ) : (
             <div className="flex flex-col py-4">
               {filteredMessages.map(m => {
-                // Safety check for color and embeds
                 const hasEmbeds =
                   m.payload.embeds && m.payload.embeds.length > 0;
                 const embedColor = hasEmbeds ? m.payload.embeds[0].color : null;
@@ -635,7 +682,7 @@ const App = () => {
                       className="bg-transparent text-sm outline-none h-20 resize-none"
                     />
                     <div className="flex items-center gap-3 pt-2 border-t border-(--border) overflow-x-auto">
-                      <span className="text-[10px] text-[#949ba4] uppercase font-bold whitespace-nowrap">
+                      <span className="text-[10px] text-[#949ba4] uppercase font-bold tracking-wide whitespace-nowrap">
                         Sidebar Colour
                       </span>
                       <input
@@ -651,7 +698,7 @@ const App = () => {
                           <div
                             key={idx}
                             onClick={() => setEmbed({ ...embed, color: c })}
-                            className="color-circle"
+                            className="w-5 h-5 rounded-full cursor-pointer border border-white/10 hover:scale-110 transition-transform shadow-md"
                             style={{ backgroundColor: c }}></div>
                         ))}
                       </div>
